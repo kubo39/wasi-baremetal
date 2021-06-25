@@ -1,12 +1,14 @@
+import ldc.attributes;
+
 extern (C):
 nothrow:
 @nogc:
-
-import ldc.attributes;
+@system:
 
 alias __wasi_fd_t = int;
-alias __wasi_filesize_t = ulong;
 alias __wasi_size_t = size_t;
+alias __wasi_errno_t = ushort;
+alias __wasi_exitcode_t = uint;
 
 struct __wasi_ciovec_t
 {
@@ -19,42 +21,33 @@ static assert(__wasi_ciovec_t.buf.offsetof == 0);
 static assert(__wasi_ciovec_t.buf_len.offsetof == 4);
 
 @llvmAttr("wasm-import-module", "wasi_snapshot_preview1")
-@llvmAttr("wasm-import-name", "fd_allocate")
-extern int __imported_wasi_snapshot_preview1_fd_allocate(int arg0, long arg1, long arg2);
-
-ushort __wasi_fd_allocate(__wasi_fd_t fd, __wasi_filesize_t offset, __wasi_filesize_t len)
-{
-    int ret = __imported_wasi_snapshot_preview1_fd_allocate(cast(int) fd, cast(long) offset, cast(long) len);
-    return cast(ushort) ret;
-}
-
-@llvmAttr("wasm-import-module", "wasi_snapshot_preview1")
-@llvmAttr("wasm-import-name","fd_close")
-extern int __imported_wasi_snapshot_preview1_fd_close(int arg0);
-
-ushort __wasi_fd_close(__wasi_fd_t fd)
-{
-    int ret = __imported_wasi_snapshot_preview1_fd_close(cast(int) fd);
-    return cast(ushort) ret;
-}
-
-@llvmAttr("wasm-import-module", "wasi_snapshot_preview1")
 @llvmAttr("wasm-import-name", "fd_write")
-extern int __imported_wasi_snapshot_preview1_fd_write(int arg0, int arg1, int arg2, int arg3);
+extern int __imported_wasi_snapshot_preview1_fd_write(int arg0, int arg1, int arg2, int arg3) @trusted;
 
-ushort __wasi_fd_write(__wasi_fd_t fd, const(__wasi_ciovec_t)* iovs, size_t iovs_len, __wasi_size_t* retptr0)
+__wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const(__wasi_ciovec_t)* iovs, size_t iovs_len, __wasi_size_t* retptr0) @trusted
 {
     int ret = __imported_wasi_snapshot_preview1_fd_write(cast(int) fd, cast(int) iovs, cast(int) iovs_len, cast(int) retptr0);
     return cast(ushort) ret;
 }
 
-void _start()
+@llvmAttr("noreturn")
+@llvmAttr("wasm-import-module", "wasi_snapshot_preview1")
+@llvmAttr("wasm-import-name", "proc_exit")
+extern void __imported_wasi_snapshot_preview1_proc_exit(int arg0) @trusted;
+
+@llvmAttr("noreturn")
+void __wasi_proc_exit(__wasi_exitcode_t rval) @trusted
 {
-    const(ubyte)* s = cast(const(ubyte)*) "Hello!\n".ptr;
-    __wasi_fd_t fd = 1;
-    __wasi_fd_allocate(fd, 0, 7);
-    __wasi_ciovec_t iovs = { s, 7 };
-    __wasi_size_t ret;
-    __wasi_fd_write(fd, &iovs, 1, &ret);
-    __wasi_fd_close(fd);
+    __imported_wasi_snapshot_preview1_proc_exit(cast(int) rval);
+}
+
+void _start() @trusted
+{
+    const(ubyte)* s = cast(const(ubyte)*) "Hello, World!\n".ptr;
+    int fd = 1;
+    __wasi_ciovec_t iovs = { s, 14 };
+    __wasi_size_t retp;
+    int r = __wasi_fd_write(fd, &iovs, 1, &retp);
+    if (r != 0)
+        __wasi_proc_exit(r);
 }
