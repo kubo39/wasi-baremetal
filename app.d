@@ -33,24 +33,11 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const(__wasi_ciovec_t)* iovs, siz
     return cast(ushort) ret;
 }
 
-@llvmAttr("noreturn")
-@llvmAttr("wasm-import-module", "wasi_snapshot_preview1")
-@llvmAttr("wasm-import-name", "proc_exit")
-extern void __imported_wasi_snapshot_preview1_proc_exit(int arg0) @trusted;
-
-@llvmAttr("noreturn")
-void __wasi_proc_exit(__wasi_exitcode_t rval) @trusted
-{
-    __imported_wasi_snapshot_preview1_proc_exit(cast(int) rval);
-}
-
 void _start() @trusted
 {
     const(ubyte)* s = cast(const(ubyte)*) "Hello, World!\n".ptr;
     int fd = 1;
     __wasi_ciovec_t iovs = { s, 14 };
     __wasi_size_t retp;
-    int r = __wasi_fd_write(fd, &iovs, 1, &retp);
-    if (r != 0)
-        __wasi_proc_exit(r);
+    __wasi_fd_write(fd, &iovs, 1, &retp);
 }
