@@ -1,3 +1,6 @@
+/**
+ based on https://github.com/WebAssembly/wasi-libc/blob/2b7e73ae7ac0bad6391d89cc3274a28412243389/libc-bottom-half/sources/__wasilibc_real.c
+ */
 import ldc.attributes;
 
 extern (C):
