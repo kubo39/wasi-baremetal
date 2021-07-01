@@ -1,19 +1,24 @@
-.PHONY: all
+LDC = ldc2
 
-all: build
+TARGET = app.wasm
+SRC = app.d
 
-build:
-	ldc2 -mtriple=wasm32-unknown-wasi \
+.PHONY: all clean
+
+all: $(TARGET)
+
+$(TARGET): $(SRC)
+	$(LDC) -mtriple=wasm32-unknown-wasi \
 		-betterC \
 		-fvisibility=hidden \
 		-defaultlib= \
-		-of=app.wasm \
-		app.d
+		-of=$@ \
+		$^
 
-run: build
-	wasmtime app.wasm
+run: $(TARGET)
+	wasmtime $^
 
 clean:
-	$(RM) *.o *.wasm
+	$(RM) *.o $(TARGET)
 
 .DELETE_ON_ERROR:
